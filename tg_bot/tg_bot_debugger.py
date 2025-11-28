@@ -1,18 +1,8 @@
 import logging
 import os
+from telethon import types, functions
 
 logger = logging.getLogger(__name__)
-
-try:
-    TELEGRAM_ADMIN_ID = int(os.getenv("TELEGRAM_ADMIN_ID", ""))
-except ValueError:
-    logger.info("TELEGRAM_ADMIN_ID environment variable is not a valid integer.")
-    TELEGRAM_ADMIN_ID = 0  # Or handle the error as appropriate for your application
-except TypeError:
-    logger.info(
-        "TELEGRAM_ADMIN_ID environment variable is not set or is not a valid integer."
-    )
-    TELEGRAM_ADMIN_ID = 0  # Or handle the error as appropriate for your application
 
 
 class FakeClient:
@@ -31,3 +21,44 @@ class FakeClient:
             return func
 
         return decorator
+
+
+async def get_user_info(client, user_or_id):
+    if type(user_or_id) == type(1):
+        user = await client.get_entity(user_or_id)
+    else:
+        user = user_or_id
+
+    info = user.first_name
+    if user.last_name != None:
+        info += f" {user.last_name}"
+    if user.phone != None:
+        info += f" ({user.phone})"
+    return info
+
+
+async def get_my_id(client, event):
+    sender_id = event.sender_id
+    user_info = await get_user_info(client, sender_id)
+    logging.info(f"command /start from user id {sender_id} ({user_info})")
+    await event.respond(f"Your id:\n{sender_id}")
+
+
+async def set_bot_commands(client):
+    common_commands = [
+        types.BotCommand(command="start", description="Get my id"),
+    ]
+
+    try:
+
+        await client(
+            functions.bots.SetBotCommandsRequest(
+                scope=types.BotCommandScopeDefault(),
+                lang_code="",
+                commands=common_commands,
+            )
+        )
+
+        logger.info("Команды бота успешно установлены.")
+    except Exception as e:
+        logger.error(f"Ошибка при установке команд: {e}")

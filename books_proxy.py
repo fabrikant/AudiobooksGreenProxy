@@ -103,26 +103,9 @@ async def root():
 ###############################################################################
 
 
-async def get_user_info(client, user_or_id):
-    if type(user_or_id) == type(1):
-        user = await client.get_entity(user_or_id)
-    else:
-        user = user_or_id
-
-    info = user.first_name
-    if user.last_name != None:
-        info += f" {user.last_name}"
-    if user.phone != None:
-        info += f" ({user.phone})"
-    return info
-
-
 @client.on(events.NewMessage(pattern="/start"))
 async def get_my_id(event):
-    sender_id = event.sender_id
-    user_info = await get_user_info(client, sender_id)
-    logging.info(f"command /start from user id {sender_id} ({user_info})")
-    await event.respond(f"Your id:\n{sender_id}")
+    await tg_bot.get_my_id(client, event)
 
 
 ###############################################################################
@@ -140,7 +123,15 @@ async def main(uvicorn_log_level):
 
     # FAST API
     SSL_CERT_FILE = os.getenv("SSL_CERT_FILE", None)
+    if SSL_CERT_FILE:
+        if not os.path.exists(SSL_CERT_FILE):
+            SSL_CERT_FILE = None
+
     SSL_PRIVATE_KEY_FILE = os.getenv("SSL_PRIVATE_KEY_FILE", None)
+    if SSL_PRIVATE_KEY_FILE:
+        if not os.path.exists(SSL_PRIVATE_KEY_FILE):
+            SSL_PRIVATE_KEY_FILE = None
+
     config = uvicorn.Config(
         "books_proxy:app",
         host="0.0.0.0",

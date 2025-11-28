@@ -4,38 +4,36 @@ services:
     container_name: audiobooks_green_proxy
     ports:
       - "8081:8081"
+    volumes:
+      # SSL certificates will be stored here
+      - ./data:/app/data
     environment:
-      # Если true, то по пути http[s]://server:port/docs будет доступен Swagger
+      # If true, Swagger will be available at http[s]://server:port/docs
       - SHOW_SWAGGER=false
-      #    Uvicorn принимает следующие варианты для параметра --log-level:
-      # • critical (самый высокий уровень, только критические ошибки)
-      # • error (ошибки)
-      # • warning (предупреждения)
-      # • info (информационные сообщения, значение по умолчанию)
-      # • debug (отладочные сообщения)
-      # • trace (очень подробные отладочные сообщения, включая тела запросов/ответов, добавленный в последних версиях Uvicorn)
-      # В зависимости от этой переменной также устанавливаются логи всего приложения
+      #    Uvicorn accepts the following options for the --log-level parameter:
+      # • critical (highest level, critical errors only)
+      # • error
+      # • warning
+      # • info (informational messages, default value)
+      # • debug
+      # • trace (very verbose debug messages, including request/response bodies, added in recent Uvicorn versions)
+      # The log level for the entire application is also set based on this variable
       - LOG_LEVEL=warning
 
       # *****************************************************************************
-      # Переменный для инициализации телеграм бота.
-      # Опционально
-      # Если переменные не установлены, бот не будет запущен. Будет работать только http прокси
-      # Получить на https://my.telegram.org
+      # Variables for launching the Telegram bot.
+      # Optional
+      # If not set, the bot will not be available.
+      # Get it at https://my.telegram.org
       - TELEGRAM_API_ID=
       - TELEGRAM_API_HASH=
-      # Получить у бота https://t.me/BotFather
+      # Get it from the bot https://t.me/BotFather
       - TELEGRAM_BOT_TOKEN=
-      # Идентификатор телеграмм. Нужно ввести идентификатор для того, чтобы назначить
-      # админа этого бота. Узнать ID можно запустив этого бота без указания админа
-      # и выполнив команду /start
-      # Также можно воспользоваться кучей другиз ботов
-      - TELEGRAM_ADMIN_ID=
-
+    
       # *****************************************************************************
-      # Опционально. Для работы без обратного прокси.
-      # Файлы должны располагаться в папке /app/data приложения. Другими словами в
-      # volume контейнера
+      # Optional. For operation without a reverse proxy.
+      # Files must be located in the /app/data folder of the application. In other words, in
+      # the container's volume
       # - SSL_CERT_FILE=/app/data/fullchain.pem
       # - SSL_PRIVATE_KEY_FILE=/app/data/priv.pem
     restart: unless-stopped
