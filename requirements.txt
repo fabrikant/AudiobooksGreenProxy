@@ -1,0 +1,4 @@
+uvicorn
+fastapi[standard]
+aiohttp[speedups]
+telethon
