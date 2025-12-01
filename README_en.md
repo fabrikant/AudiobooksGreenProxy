@@ -1,3 +1,5 @@
+[Русский](/README.md) 
+
 # AudiobooksGreenProxy
 
 This is a self-hosted proxy to work in conjunction with the audiobook player [AudiobooksGreen](https://github.com/fabrikant/AudiobooksGreen).
