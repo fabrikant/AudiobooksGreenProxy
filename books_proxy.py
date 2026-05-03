@@ -6,6 +6,7 @@ import os
 import logging
 from telethon import TelegramClient, events
 import tg_bot.tg_bot_debugger as tg_bot
+from utils.telegram_forwarder import TelegramMessage, forward_message_to_telegram
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,23 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 # TELEGRAM_API_ID не может быть 0 для рабочего бота, HASH и TOKEN не должны быть пустыми.
 start_tg_bot = bool(TELEGRAM_API_ID != 0 and TG_API_HASH and TELEGRAM_BOT_TOKEN)
 if start_tg_bot:
-    client = TelegramClient("./data/tg-bot.session", TELEGRAM_API_ID, TG_API_HASH)
+
+    proxy = (
+        {
+            "proxy_type": "http",
+            "addr": os.getenv("TELEGRAM_PROXY_HOST"),
+            "port": int(os.getenv("TELEGRAM_PROXY_PORT")),
+        }
+        if os.getenv("TELEGRAM_PROXY_HOST") and os.getenv("TELEGRAM_PROXY_PORT")
+        else None
+    )
+
+    client = TelegramClient(
+        "./data/tg-bot.session",
+        TELEGRAM_API_ID,
+        TG_API_HASH,
+        proxy=proxy,
+    )
 else:
     client = tg_bot.FakeClient()
 
@@ -113,6 +130,14 @@ async def audiobookshelf_cover(url: str):
 @app.post("/audiobookshelf/set_progress")
 async def set_progress(data: abs.AudiobookshelfProgress):
     return await abs.set_progress(data)
+
+
+# *****************************************************************************
+@app.post("/send_telegram_message")
+async def akniga_set_progress(
+    data: TelegramMessage,
+):
+    return await forward_message_to_telegram(data)
 
 
 # *****************************************************************************

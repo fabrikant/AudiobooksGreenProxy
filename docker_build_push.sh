@@ -1,7 +1,6 @@
 #! /bin/bash
 
 IMAGE_NAME=audiobooks_green_proxy
-
 USER=fabrikant
 
 
@@ -50,9 +49,33 @@ for arg in "$@"; do
 	esac
 done
 
+# Проверка наличия Docker Buildx и определение команды сборки
+if docker buildx version >/dev/null 2>&1; then
+    BUILD_CMD="docker buildx build"
+    echo "Docker Buildx установлен. Используем buildx."
+else
+    echo "Docker Buildx не установлен."
+    read -p "Хотите установить Docker Buildx? (y/n): " choice
+    case "$choice" in 
+      y|Y ) 
+        echo "Установка Docker Buildx..."
+        sudo apt update && sudo apt install -y docker-buildx
+        BUILD_CMD="docker buildx build"
+        ;;
+      n|N ) 
+        echo "Используем обычный docker build."
+        BUILD_CMD="docker build"
+        ;;
+      * ) 
+        echo "Неверный ввод. Используем обычный docker build."
+        BUILD_CMD="docker build"
+        ;;
+    esac
+fi
+
 echo "Building image..."
 # Добавляем оба тэга к образу
-docker build -t $IMAGE_LATEST_TAG -t $IMAGE_DATE_TAG .
+$BUILD_CMD -t $IMAGE_LATEST_TAG -t $IMAGE_DATE_TAG .
 echo "Build complete"
 
 if [ "$SKIP_PUSH" = false ]; then
@@ -61,9 +84,15 @@ if [ "$SKIP_PUSH" = false ]; then
 	docker push $IMAGE_LATEST_TAG
 	docker push $IMAGE_DATE_TAG
 	echo "Push complete"
+
+	docker image rm -f $IMAGE_LATEST_TAG $IMAGE_DATE_TAG
+	echo "Образы удалены после выгрузки в репозиторий"
+
 else
 	echo "Push to registry skipped (--no-push flag was used)."
 fi
+
+docker image prune -f
 
 echo ""
 echo "Image names:"

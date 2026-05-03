@@ -2,3 +2,4 @@ uvicorn
 fastapi[standard]
 aiohttp[speedups]
 telethon
+python-socks[asyncio]

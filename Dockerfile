@@ -9,7 +9,8 @@ RUN pip install --no-cache-dir --upgrade -r /books_http_proxy/requirements.txt
 RUN mkdir /app/data
 COPY audiobookshelf /app/audiobookshelf
 COPY tg_bot /app/tg_bot
+COPY utils /app/utils
 
 COPY *.py /app/
 
-CMD ["python", "books_proxy.py"]
+ENTRYPOINT ["python", "books_proxy.py"]
