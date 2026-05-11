@@ -2,15 +2,16 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY requirements.txt /books_http_proxy/requirements.txt 
-RUN pip install --no-cache-dir --upgrade pip
-RUN pip install --no-cache-dir --upgrade -r /books_http_proxy/requirements.txt
+# Установка зависимостей (используем кэш BuildKit для pip)
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-RUN mkdir /app/data
-COPY audiobookshelf /app/audiobookshelf
-COPY tg_bot /app/tg_bot
-COPY utils /app/utils
+RUN mkdir -p /app/data
+COPY audiobookshelf ./audiobookshelf
+COPY tg_bot ./tg_bot
+COPY utils ./utils
 
-COPY *.py /app/
+COPY *.py ./
 
 ENTRYPOINT ["python", "books_proxy.py"]

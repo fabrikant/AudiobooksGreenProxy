@@ -33,19 +33,43 @@ def sanitze_server_name(server):
     return result
 
 
-def sanitaze_token(token):
+def clear_token(token):
     return token.replace("Bearer ", "").strip()
 
 
 def get_book_info(resp_book):
+    # Validate id presence; only missing id is considered an error
+    book_id = None
+    if isinstance(resp_book, dict):
+        book_id = resp_book.get("id")
+    if not book_id:
+        raise HTTPException(status_code=500, detail="Missing 'id' in book data")
+
+    # Safely extract nested fields with defaults
+    media = resp_book.get("media") if isinstance(resp_book, dict) else None
+    metadata = media.get("metadata") if isinstance(media, dict) else None
+
+    title = ""
+    if isinstance(metadata, dict):
+        title = metadata.get("title", "") or ""
+
+    author = ""
+    if isinstance(metadata, dict):
+        authors = metadata.get("authors")
+        if (
+            isinstance(authors, list)
+            and len(authors) > 0
+            and isinstance(authors[0], dict)
+        ):
+            author = authors[0].get("name", "") or ""
+
     res = {
-        "id": resp_book["id"],
-        "author": "",
-        "title": resp_book["media"]["metadata"]["title"],
-        # "cover": resp_book["media"]["coverPath"],
+        "id": book_id,
+        "author": author,
+        "title": title,
+        # "cover": media.get("coverPath") if isinstance(media, dict) else "",
     }
-    if len(resp_book["media"]["metadata"]["authors"]) > 0:
-        res["author"] = resp_book["media"]["metadata"]["authors"][0]["name"]
+
     return res
 
 
@@ -212,23 +236,53 @@ async def login(server, login, password):
 
 
 async def get_cover(url):
-    if "api/items" in url and "cover" in url:
-        tmp_file = tempfile.NamedTemporaryFile(suffix=".jpeg", delete=False)
-        cover_filename = tmp_file.name
+    if ("api/items" in url and "cover" in url) or ("preview" in url):
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get(url) as resp:
                     if resp.ok:
                         data = await resp.read()
-                        try:
-                            with open(cover_filename, "wb") as f:
-                                f.write(data)
-                            return FileResponse(cover_filename)
-                        except IOError as e:
-                            raise HTTPException(
-                                status_code=500,
-                                detail=f"Failed to write cover image to temporary file: {e}",
-                            )
+                        content_type = resp.headers.get("Content-Type", "image/jpeg")
+
+                        # Если это не JPEG, конвертируем в JPEG
+                        if content_type != "image/jpeg":
+                            try:
+                                # Открываем картинку из bytes
+                                image = Image.open(io.BytesIO(data))
+
+                                # Конвертируем в RGB если нужно (для картинок с альфа-каналом)
+                                if image.mode in ("RGBA", "LA", "P"):
+                                    rgb_image = Image.new(
+                                        "RGB", image.size, (255, 255, 255)
+                                    )
+                                    if image.mode in ("RGBA", "LA"):
+                                        rgb_image.paste(image, mask=image.split()[-1])
+                                    else:
+                                        rgb_image.paste(image)
+                                    image = rgb_image
+                                elif image.mode != "RGB":
+                                    image = image.convert("RGB")
+
+                                # Сохраняем в JPEG формат
+                                output = io.BytesIO()
+                                image.save(output, format="JPEG", quality=85)
+                                output.seek(0)
+                                data = output.getvalue()
+                                content_type = "image/jpeg"
+                            except Exception as e:
+                                raise HTTPException(
+                                    status_code=500,
+                                    detail=f"Failed to convert image to JPEG: {e}",
+                                )
+
+                        return StreamingResponse(
+                            io.BytesIO(data),
+                            media_type=content_type,
+                            headers={
+                                "Content-Length": str(len(data)),
+                                "Content-Disposition": "attachment; filename=cover.jpg",
+                            },
+                        )
                     else:
                         resp_content_b = await resp.content.read()
                         raise HTTPException(

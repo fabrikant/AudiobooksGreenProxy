@@ -82,13 +82,13 @@ async def proxy_audiobookshelf_playlists(
     server: str = Query(
         "", alias="server", description="URL your Audiobookshelf server."
     ),
-    token: str = Header(
+    token: Optional[str] = Header(
         None,
         alias="Authorization",
         description="Header Authorization: Bearer your_token_here",
     ),
 ):
-    return await abs.get_playlists(server, abs.sanitaze_token(token))
+    return await abs.get_playlists(server, abs.clear_token(token))
 
 
 # *****************************************************************************
@@ -102,7 +102,7 @@ async def audiobookshelf_playlist(
         description="Header Authorization: Bearer your_token_here",
     ),
 ):
-    return await abs.get_playlist(server, playlist_id, abs.sanitaze_token(token))
+    return await abs.get_playlist(server, playlist_id, abs.clear_token(token))
 
 
 # *****************************************************************************
@@ -118,7 +118,7 @@ async def audiobookshelf_book(
         description="Header Authorization: Bearer your_token_here",
     ),
 ):
-    return await abs.get_book(server, book_id, abs.sanitaze_token(token), skip, limit)
+    return await abs.get_book(server, book_id, abs.clear_token(token), skip, limit)
 
 
 # *****************************************************************************

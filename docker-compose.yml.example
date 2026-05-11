@@ -2,11 +2,20 @@ services:
   audiobooks_green_proxy:
     image: ghcr.io/fabrikant/audiobooks_green_proxy:latest
     container_name: audiobooks_green_proxy
+    init:true
     ports:
       - "8081:8081"
     volumes:
-      # SSL certificates will be stored here
+      # Здесь будут храниться данные
       - ./data:/app/data
+     
+    #Если телеграм бот будет использовать прокси, который запущен
+    #на хосте, на котором крутится docker, нужно определить хосте
+    #К которому нужно обращаться из контейнера так
+    #- TELEGRAM_PROXY_HOST=host.docker.internal
+    #extra_hosts:
+    #  - "host.docker.internal:host-gateway"      
+
     environment:
       # If true, Swagger will be available at http[s]://server:port/docs
       - SHOW_SWAGGER=false

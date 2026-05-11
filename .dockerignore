@@ -1,0 +1,31 @@
+# Кэш Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.cache/
+
+# Виртуальные окружения (самое тяжелое!)
+venv/
+.venv/
+env/
+
+# Секреты и настройки
+.env
+*.log
+.secrets/
+
+# Git и IDE
+.git
+.gitignore
+.vscode/
+.idea/
+
+# Лишние файлы Docker
+Dockerfile
+.dockerignore
+docker-compose*
+
+# Папки с данными (если они лежат в корне проекта)
+data/
+books/
